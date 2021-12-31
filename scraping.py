@@ -12,6 +12,7 @@ def scrape_all():
     browser = Browser('chrome', **executable_path, headless=True)
 
     news_title, news_paragraph = mars_news(browser)
+    img_urls_titles = mars_hemis(browser)
 
     # Run all scraping functions and store results in a dictionary
     data = {
@@ -20,7 +21,7 @@ def scrape_all():
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
         "last_modified": dt.datetime.now(),
-        "hemispheres" : hemisphere_data(browser)
+        "hemispheres" : img_urls_titles
     }
 
     # Stop webdriver and return data
@@ -99,77 +100,22 @@ def mars_facts():
     return df.to_html(classes="table table-striped")
 
 #Scrape hemisphere data
-def hemisphere_data(browser):
-    # Visit URL
-    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+def mars_hemis(browser):
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
 
-    #Empty list
     hemisphere_image_urls = []
-
-    #Cerberus
-    browser.visit(url)
-    browser.links.find_by_partial_text('Cerberus').click()
-    html = browser.html
-    cerberus_soup = soup(html, 'html.parser')
-    cerberus_url = cerberus_soup.select_one('div.downloads a').get("href")
-    cerberus_title = cerberus_soup.select_one('div.content h2').text
-
-    #dictionary:
-    cerberus_dict = {
-            "img_url": cerberus_url,
-            "title": cerberus_title
-        }
-
-    hemisphere_image_urls.append(cerberus_dict)
-
-    #Schiaparelli
-    browser.visit(url)
-    browser.links.find_by_partial_text('Schiaparelli').click()
-    html = browser.html
-    schiaparelli_soup = soup(html, 'html.parser')
-    schiaparelli_url = schiaparelli_soup.select_one('div.downloads a').get("href")
-    schiaparelli_title = schiaparelli_soup.select_one('div.content h2').text
-
-    #dictionary:
-    schiaparelli_dict = {
-            "img_url": schiaparelli_url,
-            "title": schiaparelli_title
-        }
-
-    hemisphere_image_urls.append(schiaparelli_dict)
-
-    #Syrtis
-    browser.visit(url)
-    browser.links.find_by_partial_text('Syrtis').click()
-    html = browser.html
-    syrtis_soup = soup(html, 'html.parser')
-    syrtis_url = syrtis_soup.select_one('div.downloads a').get("href")
-    syrtis_title = syrtis_soup.select_one('div.content h2').text
-
-    #dictionary:
-    syrtis_dict = {
-            "img_url": syrtis_url,
-            "title": syrtis_title
-        }
-
-    hemisphere_image_urls.append(syrtis_dict)
-
-    #Valles
-    browser.visit(url)
-    browser.links.find_by_partial_text('Valles').click()
-    html = browser.html
-    valles_soup = soup(html, 'html.parser')
-    valles_url = valles_soup.select_one('div.downloads a').get("href")
-    valles_title = valles_soup.select_one('div.content h2').text
-
-    #dictionary:
-    valles_dict = {
-            "img_url": valles_url,
-            "title": valles_title
-        }
-
-    hemisphere_image_urls.append(valles_dict)
-
+    for hemis in range(4):
+        browser.links.find_by_partial_text('Hemisphere')[hemis].click()
+        html = browser.html
+        hemi_soup = soup(html, 'html.parser')
+        title = hemi_soup.find('h2', class_='title').text
+        img_url = hemi_soup.find('li').a.get('href')
+        hemispheres = {}
+        hemispheres['img_url'] = f'https://marshemispheres.com/{img_url}'
+        hemispheres['title'] = title
+        hemisphere_image_urls.append(hemispheres)
+        browser.back()
     return hemisphere_image_urls
 
 if __name__ == "__main__":
